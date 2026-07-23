@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom"
 import axios from 'axios'
+import api from "../api/axios";
 import React from 'react'
 
 
@@ -15,13 +16,18 @@ const Dashboard = () => {
         setLoading(true);
         try {
 
-            const response = await axios.get("http://127.0.0.1:8000/profile",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            )
+            // const response = await axios.get("http://127.0.0.1:8000/profile",
+            //     {
+            //         headers: {
+            //             Authorization: `Bearer ${token}`
+            //         }
+            //     }
+            // )
+
+            // Dashboard -> api.get -> interceptor(read token , add auth header , return congig)->
+            // FastAPI("/profile") -> JWT verification -> response -> Dashboard
+
+            const response = await api.get("/profile")
             setMessage(response.data.message)
             setLoading(false)
         }
