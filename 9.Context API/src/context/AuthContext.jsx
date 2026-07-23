@@ -8,6 +8,9 @@ export function useAuth() {
 
 export const AuthProvider = ({ children }) => {
 
+    
+    //  here ("") when user refresh the page user stays log in
+    // refresh -> react start again -> read localstorage -> token
     const [token, setToken] = useState(localStorage.getItem("token") || "");
 
 
