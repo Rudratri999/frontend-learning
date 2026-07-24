@@ -4,17 +4,23 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ roles }) => {
 
-    const { isAuthenticated } = useAuth()
-    return isAuthenticated ? <Outlet /> : <Navigate to="/login" />
+    const { isAuthenticated, role} = useAuth();
 
-    return (
-        <div>
-            {children}
-        </div>
-    )
-}
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" />;
+    }
+
+
+    if (roles && !roles.includes(role)) {
+        return <Navigate to="/unauthorized" />;
+    }
+
+
+    return <Outlet />;
+};
 
 export default ProtectedRoute
 

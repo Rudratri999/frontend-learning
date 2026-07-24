@@ -14,27 +14,45 @@ export const AuthProvider = ({ children }) => {
     // refresh -> react start again -> read localstorage -> token
     // const [token, setToken] = useState(localStorage.getItem("token") || "");
 
+    // const[role , setRole] = useState(localStorage.getItem("role" || ""))
+
     // token , setToken , removeToken = local varable
+
+    // key = token , initialvalue = ""
     const {
         value: token,
         setValue: setToken,
         removeValue: removeToken,
     } = useLocalStorage("token", "");
 
-    const login = (newToken) => {
+    // key = Role , initialvalue = ""
+    const {
+        value: role,
+        setValue: setRole,
+        removeValue: removeRole,
+    } = useLocalStorage("role", "");
+
+    const login = (newToken, userRole) => {
+        console.log("Token received:", newToken);
+        console.log("Role received:", userRole);
         setToken(newToken)
+        setRole(userRole)
     }
 
     const logout = () => {
-        setToken("")
+        removeToken()
+        removeRole()
+
     }
 
     const value = {
+        role,
         token,
         login,
         logout,
         isAuthenticated: !!token
     }
+    console.log("Auth Context Value:", value);
 
     return (
         <AuthContext.Provider value={value}>

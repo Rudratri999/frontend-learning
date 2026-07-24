@@ -56,6 +56,7 @@ users = []
 class User(BaseModel):
     username: str
     password: str
+    role: str = "user"
 
 # -----------------------------
 # Register User
@@ -79,7 +80,8 @@ def register(user: User):
     users.append(
         {
             "username": user.username,
-            "password": hashed_password
+            "password": hashed_password,
+            "role": user.role
         }
     )
 
@@ -105,14 +107,16 @@ def login(user: User):
 
                 token = jwt.encode(
                     {
-                        "username": user.username
+                        "username": user.username,
+                         "role": u["role"]
                     },
                     SECRET_KEY,
                     algorithm=ALGORITHM
                 )
 
                 return {
-                    "access_token": token
+                    "access_token": token,
+                    "role": u["role"]
                 }
 
     raise HTTPException(
@@ -139,6 +143,7 @@ def get_current_user(
         )
 
         username = payload.get("username")
+        role = payload.get("role")
 
         if username is None:
             raise HTTPException(
@@ -146,7 +151,10 @@ def get_current_user(
                 detail="Invalid Token"
             )
 
-        return username
+        return {
+               "username": username,
+                "role": role
+              }
 
     except JWTError:
 
@@ -165,5 +173,6 @@ def profile(
 ):
 
     return {
-        "message": f"Welcome {current_user}"
+        "message": f"Welcome {current_user}",
+        "role": current_user["role"]
     }

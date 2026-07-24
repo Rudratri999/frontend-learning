@@ -13,18 +13,19 @@ const Login = () => {
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
 
-   const handleLogin = async (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault()
 
-       
+
         try {
             // const response = await axios.post("http://127.0.0.1:8000/login", { username, password })
             // const response = await api.post("/login", { username, password })
-            const response = await loginUser(username , password)
-
-           login(response.data.access_token, {
-                username
-            });
+            const response = await loginUser(username, password)
+           
+            login(
+                response.data.access_token,
+                response.data.role
+            );
 
             navigate("/dashboard")
 
@@ -34,20 +35,27 @@ const Login = () => {
 
     }
 
+
     return (
         <div>
-            <form onSubmit={handleLogin}>
-                <input type="text"
-                    placeholder='Username'
+            <form
+                onSubmit={(e) => handleLogin(e)}
+            >
+                <input
+                    type="text"
+                    placeholder="Username"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)} />
+                    onChange={(e) => setUsername(e.target.value)}
+                />
 
-                <input type="password"
-                    placeholder='Password'
+                <input
+                    type="password"
+                    placeholder="Password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)} />
+                    onChange={(e) => setPassword(e.target.value)}
+                />
 
-                <button type='submit'>Login</button>
+                <button type="submit">Login</button>
             </form>
         </div>
     )

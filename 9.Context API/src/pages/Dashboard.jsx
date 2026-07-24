@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 import axios from 'axios'
 import api from "../api/axios";
 import React from 'react'
-import { useFetch } from "../hooks/useFetch"
+import {useFetch} from "../hooks/useFetch"
 
 
 const Dashboard = () => {
@@ -63,7 +63,7 @@ const Dashboard = () => {
                 <h2>Loading...</h2>
             ) : (
                 <>
-                    <h1>{message}</h1>
+                    <h1>{data?.message}</h1>
                     <button onClick={handleLogout}>Logout</button>
                 </>
             )

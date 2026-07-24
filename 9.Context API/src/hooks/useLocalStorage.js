@@ -1,32 +1,47 @@
 import { useState } from "react";
 
 
-function useLocalStorage(key, initialvalue) {
+function useLocalStorage(key, initialValue) {
+
+
+
 
     const [value, setValue] = useState(() => {
-        const storedValue = localStorage.getItem(key)
+
+        const storedValue = localStorage.getItem(key);
         if (storedValue !== null) {
-            return JSON.parse(storedValue)
+            try {
+                return JSON.parse(storedValue);
+            } catch {
+                return storedValue; // plain string fallback — this already exists, good
+            }
         }
-        return initialvalue
+
+        return initialValue;
     });
 
-    const setstoredValue = (newValue) => {
-        setValue(newValue)
-        localStorage.setItem(key, JSON.stringify(newValue))
+
+    
+    const setStoredValue = (newValue) => {
+        setValue(newValue);
+        const toStore = typeof newValue === "string" ? newValue : JSON.stringify(newValue);
+        localStorage.setItem(key, toStore);
     };
 
-    const removeValue =()=>{
-        setValue(initialvalue)
-        localStorage.removeItem(key)
-    }
+    const removeValue = () => {
 
-    return{
+        setValue(initialValue);
+
+        localStorage.removeItem(key);
+    };
+
+
+    return {
         value,
-        setValue:setstoredValue,
+        setValue: setStoredValue,
         removeValue
-    }
-
+    };
 }
+
 
 export default useLocalStorage;

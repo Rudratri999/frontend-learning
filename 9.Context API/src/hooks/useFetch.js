@@ -3,7 +3,7 @@ import api from '../api/axios'
 
 
 
-function useFetch(endpoint) {
+export function useFetch(endpoint) {
     const [data, setData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
@@ -35,4 +35,5 @@ function useFetch(endpoint) {
 
 
 }
+
 export default useFetch;
