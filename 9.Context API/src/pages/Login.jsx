@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import api from '../api/axios'
+import { loginUser } from '../services/authServices'
 
 const Login = () => {
 
@@ -17,7 +18,9 @@ const Login = () => {
 
        
         try {
-            const response = await axios.post("http://127.0.0.1:8000/login", { username, password })
+            // const response = await axios.post("http://127.0.0.1:8000/login", { username, password })
+            // const response = await api.post("/login", { username, password })
+            const response = await loginUser(username , password)
 
            login(response.data.access_token, {
                 username

@@ -4,52 +4,58 @@ import { useNavigate } from "react-router-dom"
 import axios from 'axios'
 import api from "../api/axios";
 import React from 'react'
+import { useFetch } from "../hooks/useFetch"
 
 
 const Dashboard = () => {
     const navigate = useNavigate()
-    const [message, setMessage] = useState("")
-    const [loading, setLoading] = useState(true)
+    const { logout } = useAuth()
+    // after creating custom hook
+    const { data, loading, error } = useFetch("/profile");
 
-    const { token, logout } = useAuth()
-    const fetchProfile = async () => {
-        setLoading(true);
-        try {
+    // const [message, setMessage] = useState("")
+    // const [loading, setLoading] = useState(true)
+    // const { token, logout } = useAuth()
+    // const fetchProfile = async () => {
+    //     setLoading(true);
+    //     try {
 
-            // const response = await axios.get("http://127.0.0.1:8000/profile",
-            //     {
-            //         headers: {
-            //             Authorization: `Bearer ${token}`
-            //         }
-            //     }
-            // )
+    //         // const response = await axios.get("http://127.0.0.1:8000/profile",
+    //         //     {
+    //         //         headers: {
+    //         //             Authorization: `Bearer ${token}`
+    //         //         }
+    //         //     }
+    //         // )
 
-            // Dashboard -> api.get -> interceptor(read token , add auth header , return congig)->
-            // FastAPI("/profile") -> JWT verification -> response -> Dashboard
+    //         // Dashboard -> api.get -> interceptor(read token , add auth header , return congig)->
+    //         // FastAPI("/profile") -> JWT verification -> response -> Dashboard
 
-            const response = await api.get("/profile")
-            setMessage(response.data.message)
-            setLoading(false)
-        }
+    //         const response = await api.get("/profile")
+    //         setMessage(response.data.message)
+    //         setLoading(false)
+    //     }
 
 
-        catch (err) {
-            setMessage("Failed to load profile")
-            
-        }
-        finally{
-            setLoading(false)
-        }
-    }
+    //     catch (err) {
+    //         setMessage("Failed to load profile")
+
+    //     }
+    //     finally{
+    //         setLoading(false)
+    //     }
+    // }
+
+    //  useEffect(() => {
+    //     fetchProfile()
+    // }, [token])
 
     const handleLogout = () => {
         logout();
         navigate("/login");
     }
 
-    useEffect(() => {
-        fetchProfile()
-    }, [token])
+   
 
     return (
         <div>

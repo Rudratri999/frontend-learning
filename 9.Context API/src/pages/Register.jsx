@@ -2,6 +2,7 @@ import React from 'react'
 import { useState } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
+import { registerUser } from '../services/authServices'
 
 const Register = () => {
     const navigate = useNavigate()
@@ -16,7 +17,8 @@ const Register = () => {
 
 
         try {
-            const response = await axios.post("http://127.0.0.1:8000/register", { username, password })
+            // const response = await axios.post("http://127.0.0.1:8000/register", { username, password })
+            const response = await registerUser(username , password)
             // console(response.data)
             // setUsername("")
             // setPassword("")
