@@ -24,10 +24,15 @@ export const AuthProvider = ({ children }) => {
     // }
 
     // why? = after login cookie is already stored ,we will tell react query that profile is oudated fetch it again
+    // const login = async () => {
+    //     await queryClient.invalidateQueries({
+    //         queryKey: ["profile"],
+    //     })
+    // };
+
     const login = async () => {
-        await queryClient.invalidateQueries({
-            queryKey: ["profile"],
-        })
+        const data = await getProfile();
+        setUser(data);
     };
 
     const logout = async () => {

@@ -17,13 +17,13 @@ export const registerSchema = z
   );
 
 export const loginSchema = z.object({
-    username: z
-        .string()
-        .min(6, "Username must contain 3 characters"),
+  username: z
+    .string()
+    .min(3, "Username must contain 3 characters"),
 
-    password: z
-        .string()
-        .min(6, "Password must contain 6 characters")
+  password: z
+    .string()
+    .min(6, "Password must contain 6 characters")
 
 });
 

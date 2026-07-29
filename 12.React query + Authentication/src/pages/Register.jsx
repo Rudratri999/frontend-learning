@@ -24,7 +24,7 @@ const Register = () => {
         const username = getValues(username)
         if(!username) return;
 
-        const result = await checkUsername(username)
+        const result = await checkUsername("username")
 
         if(!result.available){
             setError("username",{

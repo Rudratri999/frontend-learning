@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+
 export function useLogin() {
 
 
@@ -13,10 +14,8 @@ export function useLogin() {
     const loginMutation = useMutation(
         {
             mutationFn: loginUser,
-            onSuccess: (response) => {
-                login(
-                    response.data.access_token
-                );
+            onSuccess: async () => {
+                await login()
                 toast.success("Login Successfully");
                 // If you don't want users to go back to the login page after logging in:replace
                 navigate("/dashboard", { replace: true })
