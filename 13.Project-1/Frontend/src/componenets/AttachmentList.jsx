@@ -82,7 +82,7 @@ const AttachmentList = ({ taskId }) => {
                                     </span>
 
 
-                                    <p className="text-sm text-slate-700 truncate max-w-[180px]">
+                                    <p className="text-sm text-slate-700 truncate max-w-45">
                                         {attachment.filename}
                                     </p>
 
