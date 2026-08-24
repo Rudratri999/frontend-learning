@@ -1,0 +1,202 @@
+services:
+
+  # nginx = reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"  # reachable from host at localhost:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - frontend-network
+      - backend-network 
+      
+
+
+  # ---------------------------------------------------------------------
+  # FRONTEND SERVICE
+  # ---------------------------------------------------------------------
+  frontend:
+    # After pushing the image onto Docker Hub, you can use the image directly instead of building it from the Dockerfile.
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    image: expense-frontend:local
+
+    # image: expense-tracker-frontend:dev  
+    # volumes : 
+    #    - ./frontend:/app  host : container live chnages
+    restart : unless-stopped     # unless-stopped -> auto-restart on crash/reboot,
+                                  # but stays down if YOU manually stop it
+    # once nginx is in front of it, you don't need to expose the frontend directly to the host
+    # (nginx will be the only thing that talks to it, and nginx is reachable from the host)
+    # ports:
+    #   - "5173:80"              # host_port:container_port -> reachable from
+    #                               # your laptop at localhost:5173
+    expose:
+      - "80"
+    networks:
+      - frontend-network         # only on frontend-network -> cannot reach
+                                  # postgres directly (isolation by design)
+
+  # ---------------------------------------------------------------------
+  # BACKEND SERVICE
+  # ---------------------------------------------------------------------
+  backend:
+      # After pushing the image onto Docker Hub, you can use the image directly instead of building it from the Dockerfile.
+       image: rudrabuilds/expense-tracker-backend:latest
+       expose:
+         - "8000"                 # reachable from nginx (and frontend if needed)
+
+      #  build: "./1 . Expense Tracker API Project"   # builds image from Dockerfile
+                                                      # in this folder (not a prebuilt image)
+      # 🔒 Security Lockdown Settings
+       read_only: true
+       tmpfs:
+        - /tmp
+
+        # 🔒 Security Best Practice
+       cap_drop:
+        - ALL       # Strip away every single root privilege
+      
+       cap_add:
+        - NET_BIND_SERVICE  # Only add back permission to bind to low ports (like 80 or 443)
+
+
+      #  volumes:
+        #  - ./1 . Expense Tracker API Project:/app  this bind mounts host : container live changes
+
+
+       restart : unless-stopped
+       logging:
+         driver: json-file       # default driver, but configured here to CAP log growth
+         options:
+           max-size : "10m"      # each log file rotates out at 10MB...
+           max-file : "3"        # ...and only 3 rotated files are kept (30MB max total)
+                                  # prevents logs silently filling up the disk over time
+       deploy:
+        resources:
+           limits:
+             cpus: "1.0"       # (disabled) would cap backend to 1 CPU core
+             memory: 512M      # (disabled) would cap backend to 512MB RAM,
+                               # protecting the host if backend ever leaks/runs away
+      #  ports:
+      #     - "8000:8000"          # reachable from host at localhost:8000
+       depends_on:
+           postgres : 
+               condition: service_healthy
+               # ^ THE IMPORTANT FIX: waits for postgres's healthcheck to pass
+               # (not just for the postgres container to merely start).
+               # Plain "depends_on: [postgres]" only guarantees start ORDER,
+               # not that postgres is actually ready to accept connections yet.
+       env_file:
+              - "./1 . Expense Tracker API Project/.env"
+              # loads DATABASE_URL etc. from this file into the container's env
+       networks:
+        - backend-network        # so it can reach postgres by name
+        - frontend-network       # so frontend can reach IT by name (if needed)
+        # - shared-net    
+        # ^ (disabled) would also attach backend to an external network shared
+        # with a totally separate docker-compose project
+
+  # ---------------------------------------------------------------------
+  # POSTGRES SERVICE
+  # ---------------------------------------------------------------------
+  postgres:                       #  <- this name is service which we will gonaa used name of dervice name as in Db_url instaed local host
+    image: postgres:17
+    restart : unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres         # these three env vars are ONLY applied the
+      POSTGRES_PASSWORD: postgres     # very FIRST time the postgres_data volume
+      POSTGRES_DB: expense_tracker_db # is initialized -- changing them later does
+                                       # nothing until the volume is wiped (down -v)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # named volume -> data survives container recreation/restarts,
+      # lives outside the container's writable layer
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # pg_isready = real postgres utility that checks "can I actually accept
+      # connections right now?" -- this is what backend's depends_on waits on
+      interval: 5s    # check every 5 seconds
+      timeout: 3s     # give each check up to 3s to respond
+      retries: 5      # must fail 5 times in a row before being marked "unhealthy"
+      
+    networks:
+      backend-network:
+        aliases:
+          - db
+          - database
+
+          # A network aliases is an extra DNS service name , useful when when you want to reach one container
+          # reachable using multiple names like db , database
+          # (so inside backend-network, "postgres", "db", AND "database" all
+          # resolve to this same container -- doesn't affect frontend-network
+          # at all, since postgres isn't attached to it)
+
+# ---------------------------------------------------------------------
+# VOLUMES -- declared here, actually used above under postgres.volumes
+# ---------------------------------------------------------------------
+volumes:
+  postgres_data:
+  # Docker manages where this physically lives on disk. This is what makes
+  # your database data survive "docker compose down" (without -v) and
+  # container rebuilds. Only "docker compose down -v" or "docker volume rm"
+  # actually deletes this data.
+
+# ---------------------------------------------------------------------
+# NETWORKS -- declared here, attached to services individually above
+# ---------------------------------------------------------------------
+networks:
+  frontend-network:   # compose auto-creates this bridge network
+  backend-network:    # separate bridge network -- keeps postgres isolated
+                       # from frontend (frontend is never attached to this one)
+  # shared-net:
+  #   external: true
+  # ^ (disabled) if enabled, this would NOT create a new network --
+  # it would attach to a network that must already exist
+  # (created manually via "docker network create shared-net" beforehand)
+
+# Sometimes you want the network which work independently to .yaml file and e.g connected to another project
+# external : true says do not create network , it's aleredy exist just attach it to my service.
+
+# e.g : # /home/claude/other-project/docker-compose.yml
+# services:
+#   tester:
+#     image: alpine
+#     command: sleep 3600
+#     networks:
+#       - shared-net
+
+# networks:
+#   shared-net:
+#     external: true
+  
+#   Run it, then:
+# docker compose exec tester ping backend
+
+# It resolves and can reach your backend — because they share shared-net 
+# — even though they're managed by two completely separate compose files/projects.
+
+# =========================================================================
+# QUICK BRUSH-UP SUMMARY (read this section when returning after weeks away)
+# =========================================================================
+# - restart: unless-stopped         -> auto-heals crashes, respects manual stops
+# - depends_on + condition:
+#     service_healthy               -> backend waits for REAL readiness, not
+#                                       just "container exists"
+# - healthcheck (on postgres)       -> defines what "ready" actually means
+# - logging (on backend)            -> caps log file growth on disk
+# - networks: frontend/backend      -> segmentation; postgres is reachable
+#                                       ONLY from backend, never from frontend
+# - aliases (db, database)          -> extra nicknames for postgres, same container
+# - volumes: postgres_data          -> persists DB data across restarts/rebuilds
+# - commented deploy.resources      -> (not active) would cap backend's CPU/RAM
+# - commented shared-net            -> (not active) would let another separate
+#                                       compose project's containers reach this one

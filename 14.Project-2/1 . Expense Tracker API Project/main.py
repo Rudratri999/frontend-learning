@@ -8,7 +8,7 @@ from routers.auth_router import router as auth_router
 from routers.category_router import router as category_router
 from routers.expense_router import router as expense_router
 
-app = FastAPI()
+app = FastAPI(root_path="/api")
 
 app.add_middleware(
     CORSMiddleware,
