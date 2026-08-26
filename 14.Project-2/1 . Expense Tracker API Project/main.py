@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from models import Base
 from database import engine
 from fastapi.middleware.cors import CORSMiddleware
+from redis_client import redis_client
 
 Base.metadata.create_all(bind=engine)
 from routers.auth_router import router as auth_router
@@ -30,3 +31,10 @@ app.include_router(expense_router)
 @app.get("/")
 def home():
     return {"message": "Expense Tracker API is running successfully"}
+
+@app.get("/redis-test")
+async def redis_test():
+    await redis_client.set("test" , "redis is working")
+    value = await redis_client.get("test")
+
+    return {"value":value}

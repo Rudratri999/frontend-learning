@@ -69,7 +69,7 @@ services:
 
       #  volumes:
         #  - ./1 . Expense Tracker API Project:/app  this bind mounts host : container live changes
-
+       
 
        restart : unless-stopped
        logging:
@@ -139,6 +139,18 @@ services:
           # (so inside backend-network, "postgres", "db", AND "database" all
           # resolve to this same container -- doesn't affect frontend-network
           # at all, since postgres isn't attached to it)
+  
+
+  redis:
+     image: redis:latest
+     container_name: expense_tracker_redis
+     ports:
+       - "6379:6379"
+     volumes:
+       - redis_data:/data
+     networks: 
+       - backend-network
+      
 
 # ---------------------------------------------------------------------
 # VOLUMES -- declared here, actually used above under postgres.volumes
@@ -149,6 +161,7 @@ volumes:
   # your database data survive "docker compose down" (without -v) and
   # container rebuilds. Only "docker compose down -v" or "docker volume rm"
   # actually deletes this data.
+  redis_data:
 
 # ---------------------------------------------------------------------
 # NETWORKS -- declared here, attached to services individually above

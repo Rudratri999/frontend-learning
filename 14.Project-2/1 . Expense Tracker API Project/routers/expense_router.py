@@ -1,9 +1,10 @@
-from sqlalchemy import extract, and_
 from models import Category, Expense
 from schemas import ExpenseCreate, ExpenseResponse , CategoryResponse
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException  # type: ignore[import-not-found]
 from auth import get_current_user
 from database import get_db
+import json
+from redis_client import redis_client
 
 router = APIRouter()
 
@@ -16,7 +17,7 @@ router = APIRouter()
 
 
 @router.post("/expenses", response_model=ExpenseResponse)
-def create_expense(
+async def create_expense(
     
     expense: ExpenseCreate,
     current_user = Depends(get_current_user),
@@ -51,23 +52,59 @@ def create_expense(
     db.commit()
     db.refresh(new_expense)
 
+# Every time when new expemse gets creted then old cache data gets delete
+    cache_key = f"expense:summary:user:{current_user.id}"
+    await redis_client.delete(cache_key)
+
+# Publisher is created with channel name and message.
+    await redis_client.publish(
+        # channel name
+        "expense_events",
+        # Message
+        f"Expense created by user {current_user.id}"
+    )
+
     return new_expense
 
 @router.get("/expenses/summary")
-def get_expense_summary(
+async def get_expense_summary(
     db = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
+    # get the cache key for particular user
+    cache_key = f"expense:summary:user:{current_user.id}"
+
+    # 1. we are getting if there is data inside redis or not
+    cached = await redis_client.get(cache_key)
+
+    if cached:
+        # The recieved data=redis str and convert it into the py dict
+        return json.loads(cached)
+
+#    2. Below executes when cache miss happen then data fetch from DB directly
     expenses = db.query(Expense).filter(
         Expense.user_id == current_user.id
     ).all()
 
     if not expenses:
-        return {"total_expenses": 0, "total_amount": 0.0}
-    
-    total_expenses = len(expenses)
-    total_amount = sum(expense.amount for expense in expenses)
-    return {"total_expenses": total_expenses, "total_amount": total_amount}
+        result = {"total_expenses": 0, "total_amount": 0.0}
+    else:
+        total_expenses = len(expenses)
+        total_amount = sum(expense.amount for expense in expenses)
+        result = {
+            "total_expenses": total_expenses, 
+            "total_amount": float(total_amount)
+        }
+
+    # 3.store in redis
+    await redis_client.setex(
+        cache_key,
+        60,
+        # python dict -> redis string
+        json.dumps(result)
+    )
+
+    return result
 
 @router.get("/expenses/summary-by-category")
 def get_expense_summary_by_category(
@@ -218,17 +255,13 @@ def get_expenses_by_category(
 # Return expense
 
 @router.put("/expenses/{id}", response_model=ExpenseResponse)
-def update_expense (
+async def update_expense (
     id: int,
     Updated_expense : ExpenseCreate,
     current_user = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    if category is None:
-        raise HTTPException(
-        status_code=404,
-        detail="Category Not Found"
-    )
+   
     
     expense = db.query(Expense).filter(
         Expense.id == id
@@ -237,6 +270,12 @@ def update_expense (
     category = db.query(Category).filter(
         Category.id == Updated_expense.category_id
     ).first()
+
+    if category is None:
+            raise HTTPException(
+            status_code=404,
+            detail="Category Not Found"
+        )
 
     if expense is None:
         raise HTTPException(
@@ -263,11 +302,15 @@ def update_expense (
     
     db.commit()
     db.refresh(expense)
+
+    cache_key = f"expense:summary:user:{current_user.id}"
+    await redis_client.delete(cache_key)
+
     return expense
 
 
 @router.delete("/expenses/{id}")
-def delete_expense(
+async def delete_expense(
     id : int,
     current_user = Depends(get_current_user),
     db = Depends(get_db)
@@ -290,6 +333,10 @@ def delete_expense(
     
     db.delete(expense)
     db.commit()
+
+    cache_key = f"expense:summary:user:{current_user.id}"
+    await redis_client.delete(cache_key)
+
     return {"message" : "Expense deleted successfully"}
 
 @router.get("/expenses/sorted")
