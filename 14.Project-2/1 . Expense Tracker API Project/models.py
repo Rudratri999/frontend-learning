@@ -37,6 +37,12 @@ class User(Base):
         nullable=False
     )
 
+    role = Column(
+    String,
+    default="user",
+    nullable=False
+    )
+
     created_at = Column(
         DateTime(timezone=True),
         default=func.now()

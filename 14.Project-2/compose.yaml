@@ -55,6 +55,7 @@ services:
       #  build: "./1 . Expense Tracker API Project"   # builds image from Dockerfile
                                                       # in this folder (not a prebuilt image)
       # 🔒 Security Lockdown Settings
+      #  read_only: true
        read_only: true
        tmpfs:
         - /tmp
@@ -68,7 +69,8 @@ services:
 
 
       #  volumes:
-        #  - ./1 . Expense Tracker API Project:/app  this bind mounts host : container live changes
+      #    - ./1 . Expense Tracker API Project:/app  
+         #  this bind mounts host : container live changes
        
 
        restart : unless-stopped
