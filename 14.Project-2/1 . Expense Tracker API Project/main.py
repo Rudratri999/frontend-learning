@@ -3,6 +3,7 @@ from models import Base
 from database import engine
 from fastapi.middleware.cors import CORSMiddleware
 from redis_client import redis_client
+from tasks import say_hello
 
 Base.metadata.create_all(bind=engine)
 from routers.auth_router import router as auth_router
@@ -38,3 +39,12 @@ async def redis_test():
     value = await redis_client.get("test")
 
     return {"value":value}
+
+@app.post("/send-task")
+def send_task(name: str):
+    task = say_hello.delay(name)
+
+    return {
+        "message": "Task sent successfully",
+        "task_id": task.id
+    }
